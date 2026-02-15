@@ -39,7 +39,7 @@ class Api::V1::PricingControllerTest < ActionDispatch::IntegrationTest
       assert_equal "application/json", @response.media_type
 
       json_response = JSON.parse(@response.body)
-      assert_includes json_response["error"], "Rate not found"
+      assert_includes json_response["error"], "Rate unavailable"
     end
   end
 
