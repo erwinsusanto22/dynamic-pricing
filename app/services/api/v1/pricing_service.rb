@@ -7,6 +7,10 @@ module Api::V1
     end
 
     def run
+      # TODO: Start to implement here
+      # TODO: Use Kredis to store Cached data
+      # TODO: Logging to get log for Cache hit or no
+      # TODO: Implement Timeout
       rate = RateApiClient.get_rate(period: @period, hotel: @hotel, room: @room)
       if rate.success?
         parsed_rate = JSON.parse(rate.body)
