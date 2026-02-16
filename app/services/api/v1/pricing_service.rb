@@ -17,34 +17,32 @@ module Api::V1
     # If not found, fetches from the API and cache it
     # Returns the rate or nil if not found
     def run
-      cached_value = Rails.cache.read(cache_key)
+      cache_hit = true
 
-      if cached_value.present?
-        log_info(event: "cache_hit")
-        @result = cached_value
-      else
+      # expires_in: Cache expiration time
+      # race_condition_ttl: Race condition TTL to prevent cache stampede
+      # skip_nil: Skip caching if the value is nil
+      @result = Rails.cache.fetch(
+        cache_key,
+        expires_in: CACHE_TTL,
+        race_condition_ttl: RACE_CONDITION_TTL,
+        skip_nil: true
+      ) do
+        cache_hit = false
         log_info(event: "cache_miss")
 
-        # expires_in: Cache expiration time
-        # race_condition_ttl: Race condition TTL to prevent cache stampede
-        # skip_nil: Skip caching if the value is nil
-        @result = Rails.cache.fetch(
-          cache_key,
-          expires_in: CACHE_TTL,
-          race_condition_ttl: RACE_CONDITION_TTL,
-          skip_nil: true
-        ) do
-          value = fetch_rate_from_api
+        value = fetch_rate_from_api
 
-          if value.present?
-            log_info(event: "cache_set")
-          else
-            log_warn(event: "skip_caching_nil")
-          end
-
-          value
+        if value.present?
+          log_info(event: "cache_set")
+        else
+          log_warn(event: "skip_caching_nil")
         end
+
+        value
       end
+
+      log_info(event: "cache_hit") if cache_hit && @result.present?
 
       if @result.blank? && errors.empty?
         errors << ERROR_RATE_UNAVAILABLE
