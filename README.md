@@ -1,8 +1,72 @@
-<div align="center">
-   <img src="/img/logo.svg?raw=true" width=600 style="background-color:white;">
-</div>
-
 # Backend Engineering Take-Home Assignment: Dynamic Pricing Proxy
+
+# Design Overview
+Implement Rails Cache with Redis backend in `PricingService` to reduce the number of calls to the external API.
+
+## System Requirements
+1. Ensure rates are never older than 5 minutes - implement caching with 5 minute TTL
+2. Protect the external API (limited to 1,000 requests per day)
+3. Our service should be able to handle at least 10,000 requests per day from our user
+
+Knowing these requirements, we know that we would not be able to directly call the external API for every request, as that would quickly exhaust our daily limit. We need to implement a strategy to reduce the number of calls to the external API.
+
+## Options
+1. No Caching - Will violate the throughput constraint in no time, Waste API Token
+2. Prefetching data in the Background - Adds complexity, will need to prefetch data for every 5 minutes
+3. In-Memory Caching - Simple but not distributed, will not work if we have multiple instances
+4. Cache Implementation - Use Rails Cache with Redis backend for distributed caching so that all instances share the same cache ✅
+
+## High Level Flow:
+1. Generate cache keys based on the request parameters
+`pricing_rate:<period>:<hotel>:<room>`
+2. Our service checks if the rate is in cache
+3. If the rate is in cache, return the cached rate
+4. If the rate is not in cache, call the external API and cache the result with a 5 minute TTL
+5. Return the rate to the client
+
+## Technical Decisions:
+**Rails Cache with Redis backend for distributed caching**
+* Distributed across multiple instances and persistence across container restarts, meaning if we have 5 instances of our service running, they will all share the same cache
+* TTL of 5 minutes to ensure rates are never older than 5 minutes
+* At first, I want to use Kredis (https://github.com/rails/kredis), but I realize about the possibility of race conditions, where let say 10 requests come in at the same time and all of them miss the cache, then all 10 requests will call the external API and cache the result. This might lead to unnecessary load on the external API, so I decided to use Rails Cache where they have built-in support for distributed locking using race_condition_ttl to prevent race conditions (https://api.rubyonrails.org/v8.1/classes/ActiveSupport/Cache/Store.html)
+* The trade off using this TTL would be, a slightly stale value (in our case, I set it into 10 seconds) may be served. But this is intentional to preserve system stability and protect external API.
+* skip_nil to prevents caching failed or nil responses, to avoid serving invalid data for 5 minutes
+
+**Cache Key = `pricing_rate:<period>:<hotel>:<room>`**
+* The rate is specific to the period, hotel, and room
+* It's easy to debug and monitor specific cache entries
+* It's easy to invalidate specific cache entries
+
+**Error Handling**
+- External API failure will be translated into domain-level error (such as Rate not found or Rate unavailable) to prevent raw external API errors shown to the user
+
+## AI Usage
+- Use Windsurf for generate the unit test code after prompting the cases that need to be tested
+- Use ChatGPT base model for debugging and general assistance
+
+## How to Run
+```bash
+
+# --- 1. Build & Run The Main Application ---
+# Build and run the Docker compose
+docker compose up -d --build
+
+# --- 2. Test The Endpoint ---
+# Send a sample request to your running service
+curl 'http://localhost:3000/api/v1/pricing?period=Summer&hotel=FloatingPointResort&room=SingletonRoom'
+
+# --- 3. Run Tests ---
+# Run the full test suite
+docker compose exec interview-dev ./bin/rails test
+
+# Run a test file for pricing service
+docker compose exec interview-dev ./bin/rails test test/services/api/v1/pricing_service_test.rb
+
+# Run Rails Console for Debugging
+docker compose exec interview-dev ./bin/rails console
+```
+
+---
 
 Welcome to the Tripla backend engineering take-home assignment\! 🧑‍💻 This exercise is designed to simulate a real-world problem you might encounter as part of our team.
 
@@ -77,6 +141,5 @@ docker compose exec interview-dev ./bin/rails test test/controllers/pricing_cont
 # Run a specific test by name
 docker compose exec interview-dev ./bin/rails test test/controllers/pricing_controller_test.rb -n test_should_get_pricing_with_all_parameters
 ```
-
 
 Good luck, and we look forward to seeing what you build\!
