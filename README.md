@@ -17,12 +17,13 @@ Knowing these requirements, we know that we would not be able to directly call t
 4. Cache Implementation - Use Rails Cache with Redis backend for distributed caching so that all instances share the same cache ✅
 
 ## High Level Flow:
+<img width="1131" height="679" alt="ArchDiagram" src="https://github.com/user-attachments/assets/a1feaff9-e25e-4ecf-b4be-9be26d4e9488" />
 1. Generate cache keys based on the request parameters
 `pricing_rate:<period>:<hotel>:<room>`
 2. Our service checks if the rate is in cache
-3. If the rate is in cache, return the cached rate
-4. If the rate is not in cache, call the external API and cache the result with a 5 minute TTL
-5. Return the rate to the client
+   - If the rate is in cache, return the cached rate
+   - If the rate is not in cache, call the external API and cache the result with a 5 minute TTL
+3. Return the rate to the client
 
 ## Technical Decisions:
 **Rails Cache with Redis backend for distributed caching**
