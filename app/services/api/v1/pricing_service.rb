@@ -33,7 +33,7 @@ module Api::V1
           if value.present?
             log_info(event: "cache_set")
           else
-            log_warn(event: "not_caching_nil")
+            log_warn(event: "skip_caching_nil")
           end
 
           value
