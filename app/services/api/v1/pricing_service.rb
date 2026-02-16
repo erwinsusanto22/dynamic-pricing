@@ -13,6 +13,9 @@ module Api::V1
       @room   = room
     end
 
+    # Fetches the rate from the Redis cache
+    # If not found, fetches from the API and cache it
+    # Returns the rate or nil if not found
     def run
       cached_value = Rails.cache.read(cache_key)
 
@@ -22,6 +25,9 @@ module Api::V1
       else
         log_info(event: "cache_miss")
 
+        # expires_in: Cache expiration time
+        # race_condition_ttl: Race condition TTL to prevent cache stampede
+        # skip_nil: Skip caching if the value is nil
         @result = Rails.cache.fetch(
           cache_key,
           expires_in: CACHE_TTL,
@@ -75,12 +81,10 @@ module Api::V1
       log_error(event: "api_timeout")
       errors << ERROR_RATE_UNAVAILABLE
       nil
-
     rescue JSON::ParserError
       log_error(event: "invalid_json")
       errors << ERROR_RATE_UNAVAILABLE
       nil
-
     rescue StandardError => e
       log_error(event: "unexpected_error", message: e.message)
       errors << ERROR_RATE_UNAVAILABLE
