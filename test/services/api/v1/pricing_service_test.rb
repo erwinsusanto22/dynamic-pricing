@@ -46,8 +46,8 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
       @service.run
 
       assert @service.valid?
-      assert_equal "15000", @service.result
-      assert_equal "15000", Rails.cache.read(cache_key)
+      assert_equal 15000, @service.result
+      assert_equal 15000, Rails.cache.read(cache_key)
     end
   end
 
@@ -70,7 +70,7 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
       @service.run
     end
 
-    assert_equal "15000", @service.result
+    assert_equal 15000, @service.result
   end
 
   test "handles rate not found in API response" do

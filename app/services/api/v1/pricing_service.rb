@@ -74,7 +74,7 @@ module Api::V1
         return nil
       end
 
-      found_rate
+      found_rate.to_i
     rescue Timeout::Error
       log_error(event: "api_timeout")
       errors << ERROR_RATE_UNAVAILABLE
