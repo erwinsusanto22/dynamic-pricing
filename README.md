@@ -18,6 +18,7 @@ Knowing these requirements, we know that we would not be able to directly call t
 
 ## High Level Flow:
 <img width="1131" height="679" alt="ArchDiagram" src="https://github.com/user-attachments/assets/a1feaff9-e25e-4ecf-b4be-9be26d4e9488" />
+
 1. Generate cache keys based on the request parameters
 `pricing_rate:<period>:<hotel>:<room>`
 2. Our service checks if the rate is in cache
