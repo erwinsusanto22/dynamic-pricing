@@ -24,19 +24,19 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
   end
 
   test "returns cached rate when available" do
-    Rails.cache.write(cache_key, "15000", expires_in: 5.minutes)
+    Rails.cache.write(cache_key, 15000, expires_in: 5.minutes)
 
     @service.run
 
     assert @service.valid?
-    assert_equal "15000", @service.result
+    assert_equal 15000, @service.result
     assert_empty @service.errors
   end
 
   test "fetches fresh rate on cache miss and caches it" do
     mock_body = {
       "rates" => [
-        { "period" => @period, "hotel" => @hotel, "room" => @room, "rate" => "15000" }
+        { "period" => @period, "hotel" => @hotel, "room" => @room, "rate" => 15000 }
       ]
     }.to_json
 
@@ -64,7 +64,7 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
   end
 
   test "does not call API again when cached" do
-    Rails.cache.write(cache_key, "15000", expires_in: 5.minutes)
+    Rails.cache.write(cache_key, 15000, expires_in: 5.minutes)
 
     RateApiClient.stub(:get_rate, -> { flunk("API should not be called on cache hit") }) do
       @service.run
@@ -135,7 +135,7 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
   test "logs cache hit and miss events" do
     mock_body = {
       "rates" => [
-        { "period" => @period, "hotel" => @hotel, "room" => @room, "rate" => "15000" }
+        { "period" => @period, "hotel" => @hotel, "room" => @room, "rate" => 15000 }
       ]
     }.to_json
 
@@ -155,7 +155,7 @@ class Api::V1::PricingServiceTest < ActiveSupport::TestCase
     assert_includes log_output.string, "cache_set"
 
     # ---- Cache HIT ----
-    Rails.cache.write(cache_key, "15000")
+    Rails.cache.write(cache_key, 15000)
 
     log_output = StringIO.new
     logger = Logger.new(log_output)
